@@ -1,4 +1,4 @@
-var map, featureList, boroughSearch = [], theaterSearch = [], museumSearch = [];
+var map, featureList, boroughSearch = [], theaterSearch = [], museumSearch = [], subwaySearch = [];
 
 $(window).resize(function() {
   sizeLayerControl();
@@ -206,6 +206,12 @@ var subwayLines = L.geoJson(null, {
       mouseout: function (e) {
         subwayLines.resetStyle(e.target);
       }
+    });
+    subwaySearch.push({
+      name: layer.feature.properties.Line,
+      source: "Subways",
+      id: L.stamp(layer),
+      bounds: layer.getBounds()
     });
   }
 });
@@ -466,6 +472,16 @@ $(document).one("ajaxStop", function () {
     limit: 10
   });
 
+  var subwaysBH = new Bloodhound({
+    name: "Subways",
+    datumTokenizer: function (d) {
+      return Bloodhound.tokenizers.whitespace(d.name);
+    },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    local: subwaySearch,
+    limit: 10
+  });
+
   var theatersBH = new Bloodhound({
     name: "Theaters",
     datumTokenizer: function (d) {
@@ -517,6 +533,7 @@ $(document).one("ajaxStop", function () {
     limit: 10
   });
   boroughsBH.initialize();
+  subwaysBH.initialize();
   theatersBH.initialize();
   museumsBH.initialize();
   geonamesBH.initialize();
@@ -532,6 +549,13 @@ $(document).one("ajaxStop", function () {
     source: boroughsBH.ttAdapter(),
     templates: {
       header: "<h4 class='typeahead-header'>Boroughs</h4>"
+    }
+  }, {
+    name: "Subways",
+    displayKey: "name",
+    source: subwaysBH.ttAdapter(),
+    templates: {
+      header: "<h4 class='typeahead-header'>Subways</h4>"
     }
   }, {
     name: "Theaters",
@@ -558,6 +582,9 @@ $(document).one("ajaxStop", function () {
     }
   }).on("typeahead:selected", function (obj, datum) {
     if (datum.source === "Boroughs") {
+      map.fitBounds(datum.bounds);
+    }
+    if (datum.source === "Subways") {
       map.fitBounds(datum.bounds);
     }
     if (datum.source === "Theaters") {
